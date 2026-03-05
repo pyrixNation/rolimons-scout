@@ -629,7 +629,7 @@
       <h1>Rolimons Scout</h1>
       <div class="subtitle">// ROBLOX PLAYER INTELLIGENCE TOOL</div>
     </div>
-    <div class="header-badge">v1.6 · PUBLIC API</div>
+    <div class="header-badge">v1.7 · PUBLIC API</div>
   </header>
 
   <div class="cors-warning" style="border-left-color: var(--green); background: rgba(0,255,136,0.05); color: #80e8b0;">
@@ -764,8 +764,12 @@ const WORKER = 'https://rolimons-proxy.agarpyrix.workers.dev';
 
 async function fetchJSON(url) {
   const res = await fetch(`${WORKER}?url=${encodeURIComponent(url)}`);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
+  const text = await res.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(`Bad JSON from ${url}: ${text.slice(0, 100)}`);
+  }
 }
 
 async function fetchViaProxy(url) {
@@ -778,8 +782,8 @@ async function resolveUsernames(usernames) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ usernames, excludeBannedUsers: false })
   });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const data = await res.json();
+  const text = await res.text();
+  const data = JSON.parse(text);
   return data.data;
 }
 
@@ -789,14 +793,23 @@ async function getPresence(userIds) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ userIds })
   });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const data = await res.json();
-  return data.userPresences;
+  const text = await res.text();
+  const data = JSON.parse(text);
+  return data.userPresences || [];
 }
 
 async function getPremium(userId) {
-  const data = await fetchJSON(`https://premiumfeatures.roblox.com/v1/users/${userId}/validate-membership`);
-  return data === true || data?.hasPremiumMembership === true;
+  // Use the public badges endpoint — premium users have badge id 12
+  try {
+    const data = await fetchJSON(`https://accountinformation.roblox.com/v1/users/${userId}/roblox-badges`);
+    if (Array.isArray(data)) return data.some(b => b.id === 12);
+    // Fallback: try validate-membership
+    const data2 = await fetchJSON(`https://premiumfeatures.roblox.com/v1/users/${userId}/validate-membership`);
+    return data2 === true;
+  } catch {
+    const data2 = await fetchJSON(`https://premiumfeatures.roblox.com/v1/users/${userId}/validate-membership`);
+    return data2 === true;
+  }
 }
 
 async function getRolimonsData(userId) {
