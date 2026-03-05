@@ -629,7 +629,7 @@
       <h1>Rolimons Scout</h1>
       <div class="subtitle">// ROBLOX PLAYER INTELLIGENCE TOOL</div>
     </div>
-    <div class="header-badge">v1.8 · PUBLIC API</div>
+    <div class="header-badge">v1.9 · PUBLIC API</div>
   </header>
 
   <div class="cors-warning" style="border-left-color: var(--green); background: rgba(0,255,136,0.05); color: #80e8b0;">
@@ -813,23 +813,12 @@ async function getPremium(userId) {
 }
 
 async function getRolimonsData(userId) {
-  // Try Rolimons player API — returns { success, player_id, username, rap, value, ... }
   const data = await fetchJSON(`https://www.rolimons.com/api/player/${userId}`);
+  console.log('Rolimons response for', userId, data);
   return data;
 }
 
-async function getLastOnline(userId) {
-  // Try presence API first, fall back to user info lastOnline field
-  try {
-    const data = await fetchJSON(`https://users.roblox.com/v1/users/${userId}`);
-    // user info doesn't have lastOnline, but presence might work
-    throw new Error('use presence');
-  } catch {
-    // Try last online via a different endpoint
-    const data = await fetchJSON(`https://api.roblox.com/users/${userId}/onlinestatus`);
-    return data?.LastOnline || null;
-  }
-}
+async function getLastOnline(userId) { return null; }
 
 async function getAvatar(userId) {
   try {
@@ -1008,6 +997,7 @@ async function startScan() {
   if (validIds.length > 0) {
     try {
       const presences = await getPresence(validIds);
+      console.log('Presence response:', presences);
       presences.forEach(p => { presenceMap[p.userId] = p; });
     } catch(e) {
       // presence unavailable, continue
@@ -1067,11 +1057,6 @@ async function startScan() {
     // Presence — try batch result first, fall back to individual lookup
     const presence = presenceMap[userId];
     let lastOnline = presence?.lastOnline || null;
-    if (!lastOnline) {
-      try {
-        lastOnline = await getLastOnline(userId);
-      } catch { lastOnline = null; }
-    }
     let daysAgo = null, activeRecent = null;
     if (lastOnline) {
       const ms = Date.now() - new Date(lastOnline).getTime();
