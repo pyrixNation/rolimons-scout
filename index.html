@@ -629,7 +629,7 @@
       <h1>Rolimons Scout</h1>
       <div class="subtitle">// ROBLOX PLAYER INTELLIGENCE TOOL</div>
     </div>
-    <div class="header-badge">v1.7 · PUBLIC API</div>
+    <div class="header-badge">v1.8 · PUBLIC API</div>
   </header>
 
   <div class="cors-warning" style="border-left-color: var(--green); background: rgba(0,255,136,0.05); color: #80e8b0;">
@@ -813,8 +813,22 @@ async function getPremium(userId) {
 }
 
 async function getRolimonsData(userId) {
-  // Rolimons blocks direct browser requests — always use proxy
-  return fetchViaProxy(`https://www.rolimons.com/api/player/${userId}`);
+  // Try Rolimons player API — returns { success, player_id, username, rap, value, ... }
+  const data = await fetchJSON(`https://www.rolimons.com/api/player/${userId}`);
+  return data;
+}
+
+async function getLastOnline(userId) {
+  // Try presence API first, fall back to user info lastOnline field
+  try {
+    const data = await fetchJSON(`https://users.roblox.com/v1/users/${userId}`);
+    // user info doesn't have lastOnline, but presence might work
+    throw new Error('use presence');
+  } catch {
+    // Try last online via a different endpoint
+    const data = await fetchJSON(`https://api.roblox.com/users/${userId}/onlinestatus`);
+    return data?.LastOnline || null;
+  }
 }
 
 async function getAvatar(userId) {
@@ -1024,12 +1038,19 @@ async function startScan() {
       getAvatar(userId)
     ]);
 
-    // Parse Rolimons
+    // Parse Rolimons — API returns { success, player_id, rap, value, rolimons_verified, ... }
     let value = null, rolimonsVerified = null, rolimonsError = false;
-    if (rolimonsResult.status === 'fulfilled' && rolimonsResult.value?.success !== false) {
+    if (rolimonsResult.status === 'fulfilled') {
       const rd = rolimonsResult.value;
-      value = rd.value ?? rd.rap ?? null;
-      rolimonsVerified = !!rd.rolimons_verified;
+      if (rd && rd.success !== false) {
+        // value field is the limited value, rap is recent average price
+        value = (typeof rd.value === 'number' && rd.value > 0) ? rd.value
+              : (typeof rd.rap === 'number' && rd.rap > 0) ? rd.rap
+              : null;
+        rolimonsVerified = rd.rolimons_verified === true || rd.verified === true || rd.rolimons_verified === 1;
+      } else {
+        rolimonsError = true;
+      }
     } else {
       rolimonsError = true;
     }
@@ -1043,9 +1064,14 @@ async function startScan() {
     // Avatar
     const avatarUrl = avatarResult.status === 'fulfilled' ? avatarResult.value : null;
 
-    // Presence
+    // Presence — try batch result first, fall back to individual lookup
     const presence = presenceMap[userId];
     let lastOnline = presence?.lastOnline || null;
+    if (!lastOnline) {
+      try {
+        lastOnline = await getLastOnline(userId);
+      } catch { lastOnline = null; }
+    }
     let daysAgo = null, activeRecent = null;
     if (lastOnline) {
       const ms = Date.now() - new Date(lastOnline).getTime();
