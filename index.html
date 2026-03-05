@@ -759,24 +759,20 @@
 // API helpers
 // ──────────────────────────────────────────────
 
-// CORS proxy - routes requests through allorigins so file:// pages can reach external APIs
-const PROXY = 'https://api.allorigins.win/get?url=';
-
+// Route everything through corsproxy.io — works from any hosted page
 async function fetchJSON(url) {
-  const res = await fetch(url);
+  const res = await fetch('https://corsproxy.io/?' + encodeURIComponent(url));
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }
 
 async function fetchViaProxy(url) {
-  const res = await fetch(PROXY + encodeURIComponent(url));
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const wrapper = await res.json();
-  return JSON.parse(wrapper.contents);
+  return fetchJSON(url);
 }
 
 async function resolveUsernames(usernames) {
-  const res = await fetch('https://users.roblox.com/v1/usernames/users', {
+  // Use corsproxy.io which supports POST requests
+  const res = await fetch('https://corsproxy.io/?' + encodeURIComponent('https://users.roblox.com/v1/usernames/users'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ usernames, excludeBannedUsers: false })
@@ -787,7 +783,7 @@ async function resolveUsernames(usernames) {
 }
 
 async function getPresence(userIds) {
-  const res = await fetch('https://presence.roblox.com/v1/presence/users', {
+  const res = await fetch('https://corsproxy.io/?' + encodeURIComponent('https://presence.roblox.com/v1/presence/users'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ userIds })
@@ -798,16 +794,8 @@ async function getPresence(userIds) {
 }
 
 async function getPremium(userId) {
-  // Use proxy for premium check since it may be blocked from file://
-  try {
-    const data = await fetchViaProxy(`https://premiumfeatures.roblox.com/v1/users/${userId}/validate-membership`);
-    return data === true || data?.hasPremiumMembership === true;
-  } catch {
-    // fallback: direct fetch
-    const res = await fetch(`https://premiumfeatures.roblox.com/v1/users/${userId}/validate-membership`);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return res.json();
-  }
+  const data = await fetchViaProxy(`https://premiumfeatures.roblox.com/v1/users/${userId}/validate-membership`);
+  return data === true || data?.hasPremiumMembership === true;
 }
 
 async function getRolimonsData(userId) {
