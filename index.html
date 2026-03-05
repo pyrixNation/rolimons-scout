@@ -629,7 +629,7 @@
       <h1>Rolimons Scout</h1>
       <div class="subtitle">// ROBLOX PLAYER INTELLIGENCE TOOL</div>
     </div>
-    <div class="header-badge">v2.0 · PUBLIC API</div>
+    <div class="header-badge">v2.1 · PUBLIC API</div>
   </header>
 
   <div class="cors-warning" style="border-left-color: var(--green); background: rgba(0,255,136,0.05); color: #80e8b0;">
@@ -765,10 +765,11 @@ const WORKER = 'https://rolimons-proxy.agarpyrix.workers.dev';
 async function fetchJSON(url) {
   const res = await fetch(`${WORKER}?url=${encodeURIComponent(url)}`);
   const text = await res.text();
+  if (!res.ok) throw new Error(`HTTP_${res.status}`);
   try {
     return JSON.parse(text);
   } catch {
-    throw new Error(`Bad JSON from ${url}: ${text.slice(0, 100)}`);
+    throw new Error(`Bad JSON: ${text.slice(0, 100)}`);
   }
 }
 
@@ -1041,9 +1042,8 @@ async function startScan() {
         rolimonsNoProfile = true;
       }
     } else {
-      // Check if it's a 404 (no profile) vs real error
       const errMsg = rolimonsResult.reason?.message || '';
-      if (errMsg.includes('404')) rolimonsNoProfile = true;
+      if (errMsg.includes('404') || errMsg.includes('HTTP_404')) rolimonsNoProfile = true;
       else rolimonsError = true;
     }
 
