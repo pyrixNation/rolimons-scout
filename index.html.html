@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rolimons Scout</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080c10;
+    --panel: #0d1318;
+    --border: #1a2530;
+    --accent: #00d4ff;
+    --accent2: #ff6b35;
+    --gold: #ffd700;
+    --green: #00ff88;
+    --red: #ff3b5c;
+    --muted: #3a4a58;
+    --text: #c8dce8;
+    --text-dim: #567080;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Exo 2', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  header {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+
+  .logo-icon {
+    width: 52px;
+    height: 52px;
+    background: linear-gradient(135deg, var(--accent), #0070ff);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    box-shadow: 0 0 24px rgba(0,212,255,0.3);
+    flex-shrink: 0;
+  }
+
+  h1 {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    background: linear-gradient(90deg, var(--accent), #ffffff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .subtitle {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    font-family: 'Share Tech Mono', monospace;
+    letter-spacing: 1px;
+    margin-top: 2px;
+  }
+
+  .header-badge {
+    margin-left: auto;
+    background: rgba(255,107,53,0.1);
+    border: 1px solid rgba(255,107,53,0.3);
+    color: var(--accent2);
+    font-size: 0.7rem;
+    font-family: 'Share Tech Mono', monospace;
+    padding: 4px 10px;
+    border-radius: 4px;
+    letter-spacing: 1px;
+  }
+
+  /* CORS Warning Banner */
+  .cors-warning {
+    background: rgba(255,107,53,0.08);
+    border: 1px solid rgba(255,107,53,0.25);
+    border-left: 3px solid var(--accent2);
+    border-radius: 8px;
+    padding: 1rem 1.2rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.82rem;
+    color: #e8a080;
+    line-height: 1.6;
+  }
+  .cors-warning strong { color: var(--accent2); }
+  .cors-warning code {
+    background: rgba(255,107,53,0.15);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.85em;
+  }
+
+  /* Criteria bar */
+  .criteria-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .criterion {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.9rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+  }
+
+  .criterion-icon {
+    font-size: 1.2rem;
+    opacity: 0.85;
+  }
+
+  .criterion-text {
+    flex: 1;
+  }
+
+  .criterion-label {
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  .criterion-value {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--accent);
+    margin-top: 1px;
+  }
+
+  /* Input Panel */
+  .input-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .panel-label {
+    font-size: 0.7rem;
+    font-family: 'Share Tech Mono', monospace;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .panel-label::before {
+    content: '';
+    display: block;
+    width: 6px;
+    height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    box-shadow: 0 0 6px var(--accent);
+  }
+
+  textarea {
+    width: 100%;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.85rem;
+    padding: 0.9rem 1rem;
+    resize: vertical;
+    min-height: 120px;
+    outline: none;
+    transition: border-color 0.2s;
+    line-height: 1.7;
+  }
+
+  textarea:focus { border-color: var(--accent); }
+  textarea::placeholder { color: var(--muted); }
+
+  .input-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 1rem;
+    gap: 1rem;
+  }
+
+  .count-display {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+  }
+
+  .count-display span {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .btn-scan {
+    background: linear-gradient(135deg, var(--accent), #0070ff);
+    color: #000;
+    border: none;
+    padding: 0.75rem 2rem;
+    border-radius: 8px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 0 16px rgba(0,212,255,0.25);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .btn-scan:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 0 24px rgba(0,212,255,0.45);
+  }
+
+  .btn-scan:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .btn-clear {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 0.75rem 1.2rem;
+    border-radius: 8px;
+    font-family: 'Exo 2', sans-serif;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-clear:hover {
+    border-color: var(--red);
+    color: var(--red);
+  }
+
+  /* Progress Bar */
+  .progress-wrap {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.2rem;
+    margin-bottom: 1.5rem;
+    display: none;
+  }
+
+  .progress-wrap.visible { display: block; }
+
+  .progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.6rem;
+  }
+
+  .progress-status {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--accent);
+  }
+
+  .progress-count {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+  }
+
+  .progress-bar-track {
+    width: 100%;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), #0070ff);
+    border-radius: 2px;
+    transition: width 0.3s ease;
+    box-shadow: 0 0 8px var(--accent);
+    width: 0%;
+  }
+
+  /* Stats Row */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    display: none;
+  }
+
+  .stats-row.visible { display: grid; }
+
+  .stat-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+    text-align: center;
+  }
+
+  .stat-num {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1.8rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .stat-num.blue { color: var(--accent); }
+  .stat-num.green { color: var(--green); }
+  .stat-num.red { color: var(--red); }
+  .stat-num.gold { color: var(--gold); }
+
+  .stat-label {
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-family: 'Share Tech Mono', monospace;
+    margin-top: 4px;
+  }
+
+  /* Results table */
+  .results-panel {
+    display: none;
+  }
+
+  .results-panel.visible { display: block; }
+
+  .results-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+
+  .results-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+
+  .filter-tabs {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .filter-tab {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-family: 'Share Tech Mono', monospace;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 1px;
+  }
+
+  .filter-tab.active {
+    background: rgba(0,212,255,0.1);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .table-wrap {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+
+  thead tr {
+    background: rgba(0,212,255,0.05);
+    border-bottom: 1px solid var(--border);
+  }
+
+  th {
+    padding: 0.8rem 1rem;
+    text-align: left;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-weight: 400;
+  }
+
+  tbody tr {
+    border-bottom: 1px solid rgba(26,37,48,0.6);
+    transition: background 0.15s;
+    animation: rowIn 0.3s ease forwards;
+    opacity: 0;
+  }
+
+  @keyframes rowIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: rgba(0,212,255,0.03); }
+
+  td {
+    padding: 0.85rem 1rem;
+    vertical-align: middle;
+  }
+
+  .player-cell {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+  }
+
+  .avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: var(--border);
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+
+  .avatar-placeholder {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: var(--border);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .player-name {
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .player-id {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--text-dim);
+    margin-top: 1px;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.68rem;
+    font-family: 'Share Tech Mono', monospace;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+  }
+
+  .badge-pass {
+    background: rgba(0,255,136,0.1);
+    border: 1px solid rgba(0,255,136,0.25);
+    color: var(--green);
+  }
+
+  .badge-fail {
+    background: rgba(255,59,92,0.1);
+    border: 1px solid rgba(255,59,92,0.25);
+    color: var(--red);
+  }
+
+  .badge-warn {
+    background: rgba(255,215,0,0.1);
+    border: 1px solid rgba(255,215,0,0.25);
+    color: var(--gold);
+  }
+
+  .badge-na {
+    background: rgba(58,74,88,0.3);
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+
+  .value-cell {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.82rem;
+  }
+
+  .value-cell.high { color: var(--gold); }
+  .value-cell.low { color: var(--text-dim); }
+
+  .overall-pass { color: var(--green); font-weight: 700; }
+  .overall-fail { color: var(--red); }
+
+  .link-btn {
+    background: rgba(0,212,255,0.08);
+    border: 1px solid rgba(0,212,255,0.2);
+    color: var(--accent);
+    padding: 4px 10px;
+    border-radius: 5px;
+    font-size: 0.7rem;
+    font-family: 'Share Tech Mono', monospace;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.15s;
+  }
+
+  .link-btn:hover {
+    background: rgba(0,212,255,0.15);
+    border-color: var(--accent);
+  }
+
+  .spin {
+    display: inline-block;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  /* Error row */
+  .row-error td {
+    color: var(--text-dim);
+    font-style: italic;
+    font-size: 0.8rem;
+  }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: var(--text-dim);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+  }
+
+  .empty-icon { font-size: 2rem; margin-bottom: 0.8rem; opacity: 0.3; }
+
+  /* Tooltip for CORS errors inline */
+  .cors-note {
+    font-size: 0.65rem;
+    color: var(--accent2);
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  @media (max-width: 768px) {
+    .criteria-bar { grid-template-columns: repeat(2, 1fr); }
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    table { font-size: 0.75rem; }
+    th, td { padding: 0.6rem 0.6rem; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="logo-icon">🔍</div>
+    <div>
+      <h1>Rolimons Scout</h1>
+      <div class="subtitle">// ROBLOX PLAYER INTELLIGENCE TOOL</div>
+    </div>
+    <div class="header-badge">v1.0 · PUBLIC API</div>
+  </header>
+
+  <div class="cors-warning" style="border-left-color: var(--green); background: rgba(0,255,136,0.05); color: #80e8b0;">
+    <strong style="color: var(--green);">✓ No setup required</strong> — This tool uses a free CORS proxy to reach Rolimons & Roblox APIs. Just open the file and scan. Internet connection required.
+  </div>
+
+  <!-- Criteria -->
+  <div class="criteria-bar">
+    <div class="criterion">
+      <div class="criterion-icon">💎</div>
+      <div class="criterion-text">
+        <div class="criterion-label">Min Limited Value</div>
+        <div class="criterion-value">15,000 RAP</div>
+      </div>
+    </div>
+    <div class="criterion">
+      <div class="criterion-icon">🔄</div>
+      <div class="criterion-text">
+        <div class="criterion-label">Trades</div>
+        <div class="criterion-value">Must Be ON</div>
+      </div>
+    </div>
+    <div class="criterion">
+      <div class="criterion-icon">⭐</div>
+      <div class="criterion-text">
+        <div class="criterion-label">Premium</div>
+        <div class="criterion-value">Required</div>
+      </div>
+    </div>
+    <div class="criterion">
+      <div class="criterion-icon">📅</div>
+      <div class="criterion-text">
+        <div class="criterion-label">Last Active</div>
+        <div class="criterion-value">Within 7 Days</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Input Panel -->
+  <div class="input-panel">
+    <div class="panel-label">Input · Usernames</div>
+    <div style="display:flex; gap: 0.6rem; margin-bottom: 0.7rem;">
+      <label class="btn-clear" style="cursor:pointer; display:flex; align-items:center; gap:0.4rem;">
+        📂 Import CSV
+        <input type="file" id="csvInput" accept=".csv,.txt" style="display:none" onchange="importCSV(this)">
+      </label>
+      <span style="font-family:'Share Tech Mono',monospace; font-size:0.72rem; color:var(--text-dim); align-self:center;">— or paste below</span>
+    </div>
+    <textarea id="usernameInput" placeholder="Enter usernames — one per line or comma-separated:&#10;&#10;Builderman&#10;Roblox&#10;SomeTrader123&#10;..."></textarea>
+    <div class="input-footer">
+      <div class="count-display">Usernames detected: <span id="usernameCount">0</span></div>
+      <div style="display:flex; gap: 0.6rem;">
+        <button class="btn-clear" onclick="clearAll()">Clear</button>
+        <button class="btn-scan" id="scanBtn" onclick="startScan()">
+          <span>⚡</span> SCAN PLAYERS
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-header">
+      <div class="progress-status" id="progressStatus">Resolving usernames...</div>
+      <div class="progress-count" id="progressCount">0 / 0</div>
+    </div>
+    <div class="progress-bar-track">
+      <div class="progress-bar-fill" id="progressFill"></div>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row" id="statsRow">
+    <div class="stat-card">
+      <div class="stat-num blue" id="statTotal">0</div>
+      <div class="stat-label">Scanned</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num green" id="statPass">0</div>
+      <div class="stat-label">All Criteria Met</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num red" id="statFail">0</div>
+      <div class="stat-label">Failed Criteria</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num gold" id="statVerified">0</div>
+      <div class="stat-label">Rolimons Verified</div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="results-panel" id="resultsPanel">
+    <div class="results-header">
+      <div class="results-title">// RESULTS</div>
+      <div class="filter-tabs">
+        <button class="filter-tab active" onclick="setFilter('all', this)">All</button>
+        <button class="filter-tab" onclick="setFilter('pass', this)">Passed ✅</button>
+        <button class="filter-tab" onclick="setFilter('fail', this)">Failed ❌</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Player</th>
+            <th>Limited Value</th>
+            <th>Trades</th>
+            <th>Premium</th>
+            <th>Last Active</th>
+            <th>Rolimons</th>
+            <th>Overall</th>
+            <th>Profile</th>
+          </tr>
+        </thead>
+        <tbody id="resultsBody">
+          <tr><td colspan="8"><div class="empty-state"><div class="empty-icon">📡</div>No scan results yet</div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ──────────────────────────────────────────────
+// API helpers
+// ──────────────────────────────────────────────
+
+// CORS proxy - routes requests through allorigins so file:// pages can reach external APIs
+const PROXY = 'https://api.allorigins.win/get?url=';
+
+async function fetchJSON(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+async function fetchViaProxy(url) {
+  const res = await fetch(PROXY + encodeURIComponent(url));
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const wrapper = await res.json();
+  return JSON.parse(wrapper.contents);
+}
+
+async function resolveUsernames(usernames) {
+  const res = await fetch('https://users.roblox.com/v1/usernames/users', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ usernames, excludeBannedUsers: false })
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json();
+  return data.data;
+}
+
+async function getPresence(userIds) {
+  const res = await fetch('https://presence.roblox.com/v1/presence/users', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userIds })
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json();
+  return data.userPresences;
+}
+
+async function getPremium(userId) {
+  // Use proxy for premium check since it may be blocked from file://
+  try {
+    const data = await fetchViaProxy(`https://premiumfeatures.roblox.com/v1/users/${userId}/validate-membership`);
+    return data === true || data?.hasPremiumMembership === true;
+  } catch {
+    // fallback: direct fetch
+    const res = await fetch(`https://premiumfeatures.roblox.com/v1/users/${userId}/validate-membership`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
+  }
+}
+
+async function getRolimonsData(userId) {
+  // Rolimons blocks direct browser requests — always use proxy
+  return fetchViaProxy(`https://www.rolimons.com/api/player/${userId}`);
+}
+
+async function getAvatar(userId) {
+  try {
+    const data = await fetchJSON(
+      `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userId}&size=48x48&format=Png`
+    );
+    return data.data?.[0]?.imageUrl || null;
+  } catch {
+    return null;
+  }
+}
+
+function importCSV(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const text = e.target.result;
+    // Try to find a username column, otherwise just grab all values
+    const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+    let usernames = [];
+    // Check if first line looks like a header
+    const header = lines[0].toLowerCase();
+    const colIndex = header.split(',').findIndex(h => h.includes('user') || h.includes('name'));
+    if (colIndex >= 0) {
+      // Has header row with username column
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(',');
+        if (cols[colIndex]) usernames.push(cols[colIndex].trim().replace(/"/g,''));
+      }
+    } else {
+      // No header — treat first column or whole line as username
+      for (const line of lines) {
+        const val = line.split(',')[0].trim().replace(/"/g,'');
+        if (val) usernames.push(val);
+      }
+    }
+    textarea.value = usernames.join('\n');
+    countEl.textContent = parseUsernames(textarea.value).length;
+  };
+  reader.readAsText(file);
+}
+
+
+
+function parseUsernames(raw) {
+  return raw
+    .split(/[\n,]+/)
+    .map(s => s.trim())
+    .filter(s => s.length > 0 && s.length <= 20);
+}
+
+// ──────────────────────────────────────────────
+// UI helpers
+// ──────────────────────────────────────────────
+
+const textarea = document.getElementById('usernameInput');
+const countEl = document.getElementById('usernameCount');
+
+textarea.addEventListener('input', () => {
+  const names = parseUsernames(textarea.value);
+  countEl.textContent = names.length;
+});
+
+function clearAll() {
+  textarea.value = '';
+  countEl.textContent = '0';
+  document.getElementById('resultsBody').innerHTML =
+    '<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">📡</div>No scan results yet</div></td></tr>';
+  document.getElementById('resultsPanel').classList.remove('visible');
+  document.getElementById('statsRow').classList.remove('visible');
+  document.getElementById('progressWrap').classList.remove('visible');
+}
+
+function setProgress(status, done, total) {
+  document.getElementById('progressStatus').textContent = status;
+  document.getElementById('progressCount').textContent = `${done} / ${total}`;
+  document.getElementById('progressFill').style.width = total > 0 ? `${(done/total)*100}%` : '0%';
+}
+
+function setFilter(type, btn) {
+  document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const rows = document.querySelectorAll('#resultsBody tr[data-status]');
+  rows.forEach(row => {
+    if (type === 'all') row.style.display = '';
+    else if (type === 'pass') row.style.display = row.dataset.status === 'pass' ? '' : 'none';
+    else if (type === 'fail') row.style.display = row.dataset.status === 'fail' ? '' : 'none';
+  });
+}
+
+function badgeHTML(value, passCondition, naText) {
+  if (value === null || value === undefined || value === 'N/A') {
+    return `<span class="badge badge-na">N/A</span>`;
+  }
+  if (naText) return `<span class="badge badge-na">${naText}</span>`;
+  return passCondition
+    ? `<span class="badge badge-pass">✓ YES</span>`
+    : `<span class="badge badge-fail">✗ NO</span>`;
+}
+
+function formatDaysAgo(isoString) {
+  if (!isoString) return null;
+  const ms = Date.now() - new Date(isoString).getTime();
+  const days = Math.floor(ms / 86400000);
+  if (days === 0) return 'Today';
+  if (days === 1) return '1 day ago';
+  return `${days} days ago`;
+}
+
+function formatValue(v) {
+  if (v == null || v < 0) return null;
+  if (v >= 1000000) return (v/1000000).toFixed(1) + 'M';
+  if (v >= 1000) return (v/1000).toFixed(1) + 'K';
+  return v.toString();
+}
+
+// ──────────────────────────────────────────────
+// Main scan
+// ──────────────────────────────────────────────
+
+async function startScan() {
+  const usernames = parseUsernames(textarea.value);
+  if (usernames.length === 0) return;
+
+  const btn = document.getElementById('scanBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin">⚙</span> SCANNING...';
+
+  const tbody = document.getElementById('resultsBody');
+  tbody.innerHTML = '';
+
+  document.getElementById('progressWrap').classList.add('visible');
+  document.getElementById('statsRow').classList.add('visible');
+  document.getElementById('resultsPanel').classList.add('visible');
+
+  let statTotal = 0, statPass = 0, statFail = 0, statVerified = 0;
+
+  const updateStats = () => {
+    document.getElementById('statTotal').textContent = statTotal;
+    document.getElementById('statPass').textContent = statPass;
+    document.getElementById('statFail').textContent = statFail;
+    document.getElementById('statVerified').textContent = statVerified;
+  };
+
+  setProgress('Resolving usernames...', 0, usernames.length);
+
+  // Step 1: Resolve usernames to IDs in batches of 100
+  let resolved = [];
+  try {
+    const chunks = [];
+    for (let i = 0; i < usernames.length; i += 100) chunks.push(usernames.slice(i, i+100));
+    for (const chunk of chunks) {
+      const r = await resolveUsernames(chunk);
+      resolved.push(...r);
+    }
+  } catch(e) {
+    // CORS or network error — show all as error rows
+    for (const uname of usernames) {
+      appendErrorRow(tbody, uname, `API Error (likely CORS): ${e.message}`);
+      statTotal++; statFail++;
+    }
+    updateStats();
+    setProgress('Complete (API error)', usernames.length, usernames.length);
+    finishScan(btn);
+    return;
+  }
+
+  // Map requestedUsername -> id
+  const idMap = {};
+  resolved.forEach(r => { idMap[r.requestedUsername?.toLowerCase()] = r; });
+
+  // Step 2: Collect all user IDs for batch presence fetch
+  const validIds = resolved.filter(r => r.id).map(r => r.id);
+  let presenceMap = {};
+  if (validIds.length > 0) {
+    try {
+      const presences = await getPresence(validIds);
+      presences.forEach(p => { presenceMap[p.userId] = p; });
+    } catch(e) {
+      // presence unavailable, continue
+    }
+  }
+
+  // Step 3: Per-user checks
+  let done = 0;
+  for (const uname of usernames) {
+    const resolved_user = idMap[uname.toLowerCase()];
+    setProgress(`Checking ${uname}...`, done, usernames.length);
+
+    if (!resolved_user || !resolved_user.id) {
+      appendErrorRow(tbody, uname, 'User not found');
+      statTotal++; statFail++;
+      updateStats();
+      done++;
+      continue;
+    }
+
+    const userId = resolved_user.id;
+    const displayName = resolved_user.name;
+
+    // Run checks in parallel
+    const [rolimonsResult, premiumResult, avatarResult] = await Promise.allSettled([
+      getRolimonsData(userId),
+      getPremium(userId),
+      getAvatar(userId)
+    ]);
+
+    // Parse Rolimons
+    let value = null, rolimonsVerified = null, rolimonsError = false;
+    if (rolimonsResult.status === 'fulfilled' && rolimonsResult.value?.success !== false) {
+      const rd = rolimonsResult.value;
+      value = rd.value ?? rd.rap ?? null;
+      rolimonsVerified = !!rd.rolimons_verified;
+    } else {
+      rolimonsError = true;
+    }
+
+    // Parse premium
+    let hasPremium = null;
+    if (premiumResult.status === 'fulfilled') {
+      hasPremium = premiumResult.value === true || premiumResult.value?.hasPremiumMembership === true;
+    }
+
+    // Avatar
+    const avatarUrl = avatarResult.status === 'fulfilled' ? avatarResult.value : null;
+
+    // Presence
+    const presence = presenceMap[userId];
+    let lastOnline = presence?.lastOnline || null;
+    let daysAgo = null, activeRecent = null;
+    if (lastOnline) {
+      const ms = Date.now() - new Date(lastOnline).getTime();
+      daysAgo = Math.floor(ms / 86400000);
+      activeRecent = daysAgo <= 7;
+    }
+
+    // Trade status: not publicly accessible without auth — mark N/A
+    const tradeEnabled = null; // Cannot check without authentication
+
+    // Value check
+    const valuePass = value !== null && value >= 15000;
+
+    // Overall pass (trades excluded as N/A)
+    const allCheckable = valuePass && (hasPremium === true) && (activeRecent === true);
+    const anyFailed = (value !== null && !valuePass) || (hasPremium === false) || (activeRecent === false);
+    const overall = anyFailed ? 'fail' : (allCheckable ? 'pass' : 'partial');
+
+    if (overall === 'pass') statPass++;
+    else statFail++;
+    statTotal++;
+    if (rolimonsVerified) statVerified++;
+    updateStats();
+
+    // Build row
+    const tr = document.createElement('tr');
+    tr.dataset.status = overall === 'pass' ? 'pass' : 'fail';
+    tr.style.animationDelay = `${done * 40}ms`;
+
+    const valueStr = formatValue(value);
+    const valueClass = value !== null && value >= 15000 ? 'high' : 'low';
+    const lastActiveStr = daysAgo !== null ? formatDaysAgo(lastOnline) : null;
+
+    let overallHTML = '';
+    if (overall === 'pass') overallHTML = `<span class="overall-pass">✓ PASS</span>`;
+    else if (overall === 'fail') overallHTML = `<span class="overall-fail">✗ FAIL</span>`;
+    else overallHTML = `<span class="badge badge-warn">~ PARTIAL</span>`;
+
+    let rolBadge = '';
+    if (rolimonsError) rolBadge = `<span class="badge badge-na cors-note">CORS ERR</span>`;
+    else if (rolimonsVerified === true) rolBadge = `<span class="badge badge-pass">✓ VERIFIED</span>`;
+    else if (rolimonsVerified === false) rolBadge = `<span class="badge badge-fail">✗ NO</span>`;
+    else rolBadge = `<span class="badge badge-na">N/A</span>`;
+
+    tr.innerHTML = `
+      <td>
+        <div class="player-cell">
+          ${avatarUrl
+            ? `<img class="avatar" src="${avatarUrl}" alt="${displayName}" onerror="this.style.display='none'">`
+            : `<div class="avatar-placeholder">?</div>`}
+          <div>
+            <div class="player-name">${displayName}</div>
+            <div class="player-id">ID: ${userId}</div>
+          </div>
+        </div>
+      </td>
+      <td>
+        <span class="value-cell ${valueClass}">
+          ${valueStr !== null ? valueStr : '<span class="cors-note">ERR</span>'}
+        </span>
+        ${value !== null ? (valuePass
+          ? `<span class="badge badge-pass" style="margin-left:5px">✓</span>`
+          : `<span class="badge badge-fail" style="margin-left:5px">✗</span>`)
+          : ''}
+      </td>
+      <td><span class="badge badge-na" title="Roblox doesn't expose trade settings publicly without auth">AUTH REQ</span></td>
+      <td>${hasPremium === null ? `<span class="badge badge-na cors-note">CORS ERR</span>` : badgeHTML(hasPremium, hasPremium)}</td>
+      <td>
+        ${lastActiveStr !== null
+          ? `<span class="${activeRecent ? 'badge badge-pass' : 'badge badge-fail'}">${lastActiveStr}</span>`
+          : `<span class="badge badge-na cors-note">CORS ERR</span>`}
+      </td>
+      <td>${rolBadge}</td>
+      <td>${overallHTML}</td>
+      <td>
+        <a class="link-btn" href="https://www.roblox.com/users/${userId}/profile" target="_blank">Roblox ↗</a>
+        <a class="link-btn" href="https://www.rolimons.com/player/${userId}" target="_blank" style="margin-left:4px">Roli ↗</a>
+      </td>
+    `;
+
+    tbody.appendChild(tr);
+    done++;
+  }
+
+  setProgress('Scan complete ✓', usernames.length, usernames.length);
+  finishScan(btn);
+}
+
+function appendErrorRow(tbody, uname, msg) {
+  const tr = document.createElement('tr');
+  tr.className = 'row-error';
+  tr.dataset.status = 'fail';
+  tr.innerHTML = `
+    <td colspan="7">
+      <div class="player-cell">
+        <div class="avatar-placeholder">!</div>
+        <div>
+          <div style="color: var(--text-dim)">${uname}</div>
+          <div class="player-id" style="color: var(--red)">${msg}</div>
+        </div>
+      </div>
+    </td>
+    <td>—</td>
+  `;
+  tbody.appendChild(tr);
+}
+
+function finishScan(btn) {
+  btn.disabled = false;
+  btn.innerHTML = '<span>⚡</span> SCAN PLAYERS';
+}
+</script>
+</body>
+</html>
