@@ -629,7 +629,7 @@
       <h1>Rolimons Scout</h1>
       <div class="subtitle">// ROBLOX PLAYER INTELLIGENCE TOOL</div>
     </div>
-    <div class="header-badge">v1.0 · PUBLIC API</div>
+    <div class="header-badge">v1.3 · PUBLIC API</div>
   </header>
 
   <div class="cors-warning" style="border-left-color: var(--green); background: rgba(0,255,136,0.05); color: #80e8b0;">
@@ -759,9 +759,13 @@
 // API helpers
 // ──────────────────────────────────────────────
 
-// Route everything through corsproxy.io — works from any hosted page
+// Route everything through proxy.cors.sh — supports both GET and POST
+const CORS_HEADERS = {
+  'x-cors-api-key': 'temp_public'
+};
+
 async function fetchJSON(url) {
-  const res = await fetch('https://corsproxy.io/?' + encodeURIComponent(url));
+  const res = await fetch('https://proxy.cors.sh/' + url, { headers: CORS_HEADERS });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }
@@ -771,10 +775,13 @@ async function fetchViaProxy(url) {
 }
 
 async function resolveUsernames(usernames) {
-  // Use corsproxy.io which supports POST requests
-  const res = await fetch('https://corsproxy.io/?' + encodeURIComponent('https://users.roblox.com/v1/usernames/users'), {
+  // Roblox username lookup — POST via cors.sh proxy
+  const res = await fetch('https://proxy.cors.sh/https://users.roblox.com/v1/usernames/users', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'x-cors-api-key': 'temp_' + Math.random().toString(36).slice(2)
+    },
     body: JSON.stringify({ usernames, excludeBannedUsers: false })
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -783,9 +790,12 @@ async function resolveUsernames(usernames) {
 }
 
 async function getPresence(userIds) {
-  const res = await fetch('https://corsproxy.io/?' + encodeURIComponent('https://presence.roblox.com/v1/presence/users'), {
+  const res = await fetch('https://proxy.cors.sh/https://presence.roblox.com/v1/presence/users', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'x-cors-api-key': 'temp_' + Math.random().toString(36).slice(2)
+    },
     body: JSON.stringify({ userIds })
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -794,7 +804,7 @@ async function getPresence(userIds) {
 }
 
 async function getPremium(userId) {
-  const data = await fetchViaProxy(`https://premiumfeatures.roblox.com/v1/users/${userId}/validate-membership`);
+  const data = await fetchJSON(`https://premiumfeatures.roblox.com/v1/users/${userId}/validate-membership`);
   return data === true || data?.hasPremiumMembership === true;
 }
 
