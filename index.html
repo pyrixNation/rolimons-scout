@@ -629,7 +629,7 @@
       <h1>Rolimons Scout</h1>
       <div class="subtitle">// ROBLOX PLAYER INTELLIGENCE TOOL</div>
     </div>
-    <div class="header-badge">v2.3 · PUBLIC API</div>
+    <div class="header-badge">v2.4 · PUBLIC API</div>
   </header>
 
   <div class="cors-warning" style="border-left-color: var(--green); background: rgba(0,255,136,0.05); color: #80e8b0;">
@@ -841,16 +841,36 @@ async function getTradeStatus(userId, cookie) {
 }
 
 async function getRolimonsData(userId) {
-  // Try both API endpoints
-  try {
-    const data = await fetchJSON(`https://api.rolimons.com/players/v1/playerinfo/${userId}`);
-    console.log('Rolimons response for', userId, data);
-    return data;
-  } catch {
-    const data = await fetchJSON(`https://www.rolimons.com/api/player/${userId}`);
-    console.log('Rolimons fallback response for', userId, data);
-    return data;
+  // Scrape the Rolimons player page and extract data from embedded JS
+  const res = await fetch(`${WORKER}?url=${encodeURIComponent(`https://www.rolimons.com/player/${userId}`)}`);
+  const html = await res.text();
+  console.log('Rolimons HTML status:', res.status, html.slice(0, 200));
+
+  if (res.status === 404 || html.includes('Page Not Found')) {
+    throw new Error('HTTP_404');
   }
+
+  // Rolimons embeds player data in a JS variable in the page
+  // Look for: var player_data = {...} or playerData = {...}
+  const valueMatch = html.match(/["']value["']\s*:\s*(\d+)/i)
+    || html.match(/player_value['"]\s*[=:]\s*(\d+)/i)
+    || html.match(/value['"]\s*:\s*(\d+)/);
+  const rapMatch = html.match(/["']rap["']\s*:\s*(\d+)/i)
+    || html.match(/player_rap['"]\s*[=:]\s*(\d+)/i);
+  const verifiedMatch = html.match(/rolimons_verified['"]\s*[=:]\s*(true|1)/i)
+    || html.includes('verified-badge') || html.includes('verified_badge');
+
+  const value = valueMatch ? parseInt(valueMatch[1]) : null;
+  const rap = rapMatch ? parseInt(rapMatch[1]) : null;
+  const rolimons_verified = !!verifiedMatch;
+
+  if (value === null && rap === null) {
+    // Page loaded but no data found — might be a valid profile with 0 value
+    // Check if page has player info at all
+    if (!html.includes('rolimons') || html.length < 500) throw new Error('HTTP_404');
+  }
+
+  return { success: true, value, rap, rolimons_verified };
 }
 
 async function getLastOnline(userId) { return null; }
