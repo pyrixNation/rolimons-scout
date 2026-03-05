@@ -629,7 +629,7 @@
       <h1>Rolimons Scout</h1>
       <div class="subtitle">// ROBLOX PLAYER INTELLIGENCE TOOL</div>
     </div>
-    <div class="header-badge">v1.4 · PUBLIC API</div>
+    <div class="header-badge">v1.5 · PUBLIC API</div>
   </header>
 
   <div class="cors-warning" style="border-left-color: var(--green); background: rgba(0,255,136,0.05); color: #80e8b0;">
@@ -759,19 +759,13 @@
 // API helpers
 // ──────────────────────────────────────────────
 
-// CORS proxy setup — corsproxy.io for GET, thingproxy for POST
+// Your personal Cloudflare Worker proxy — handles both GET and POST
+const WORKER = 'https://rolimons-proxy.agarpyrix.workers.dev';
+
 async function fetchJSON(url) {
-  // Try corsproxy.io first, fall back to allorigins
-  try {
-    const res = await fetch('https://corsproxy.io/?' + encodeURIComponent(url));
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return res.json();
-  } catch(e) {
-    const res = await fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(url));
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const w = await res.json();
-    return JSON.parse(w.contents);
-  }
+  const res = await fetch(`${WORKER}?url=${encodeURIComponent(url)}`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
 }
 
 async function fetchViaProxy(url) {
@@ -779,9 +773,7 @@ async function fetchViaProxy(url) {
 }
 
 async function resolveUsernames(usernames) {
-  // thingproxy supports POST and is free
-  const target = 'https://users.roblox.com/v1/usernames/users';
-  const res = await fetch('https://thingproxy.freeboard.io/fetch/' + target, {
+  const res = await fetch(`${WORKER}?url=${encodeURIComponent('https://users.roblox.com/v1/usernames/users')}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ usernames, excludeBannedUsers: false })
@@ -792,8 +784,7 @@ async function resolveUsernames(usernames) {
 }
 
 async function getPresence(userIds) {
-  const target = 'https://presence.roblox.com/v1/presence/users';
-  const res = await fetch('https://thingproxy.freeboard.io/fetch/' + target, {
+  const res = await fetch(`${WORKER}?url=${encodeURIComponent('https://presence.roblox.com/v1/presence/users')}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ userIds })
