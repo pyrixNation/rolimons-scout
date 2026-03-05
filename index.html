@@ -629,7 +629,7 @@
       <h1>Rolimons Scout</h1>
       <div class="subtitle">// ROBLOX PLAYER INTELLIGENCE TOOL</div>
     </div>
-    <div class="header-badge">v1.9 · PUBLIC API</div>
+    <div class="header-badge">v2.0 · PUBLIC API</div>
   </header>
 
   <div class="cors-warning" style="border-left-color: var(--green); background: rgba(0,255,136,0.05); color: #80e8b0;">
@@ -1029,20 +1029,22 @@ async function startScan() {
     ]);
 
     // Parse Rolimons — API returns { success, player_id, rap, value, rolimons_verified, ... }
-    let value = null, rolimonsVerified = null, rolimonsError = false;
+    let value = null, rolimonsVerified = null, rolimonsError = false, rolimonsNoProfile = false;
     if (rolimonsResult.status === 'fulfilled') {
       const rd = rolimonsResult.value;
       if (rd && rd.success !== false) {
-        // value field is the limited value, rap is recent average price
         value = (typeof rd.value === 'number' && rd.value > 0) ? rd.value
               : (typeof rd.rap === 'number' && rd.rap > 0) ? rd.rap
               : null;
         rolimonsVerified = rd.rolimons_verified === true || rd.verified === true || rd.rolimons_verified === 1;
       } else {
-        rolimonsError = true;
+        rolimonsNoProfile = true;
       }
     } else {
-      rolimonsError = true;
+      // Check if it's a 404 (no profile) vs real error
+      const errMsg = rolimonsResult.reason?.message || '';
+      if (errMsg.includes('404')) rolimonsNoProfile = true;
+      else rolimonsError = true;
     }
 
     // Parse premium
@@ -1062,6 +1064,13 @@ async function startScan() {
       const ms = Date.now() - new Date(lastOnline).getTime();
       daysAgo = Math.floor(ms / 86400000);
       activeRecent = daysAgo <= 7;
+    } else if (presence) {
+      // lastOnline requires auth — but if presenceType > 0 they're online right now
+      if (presence.userPresenceType > 0) {
+        daysAgo = 0;
+        activeRecent = true;
+        lastOnline = new Date().toISOString();
+      }
     }
 
     // Trade status: not publicly accessible without auth — mark N/A
@@ -1096,9 +1105,10 @@ async function startScan() {
     else overallHTML = `<span class="badge badge-warn">~ PARTIAL</span>`;
 
     let rolBadge = '';
-    if (rolimonsError) rolBadge = `<span class="badge badge-na cors-note">CORS ERR</span>`;
+    if (rolimonsError) rolBadge = `<span class="badge badge-na cors-note">ERR</span>`;
+    else if (rolimonsNoProfile) rolBadge = `<span class="badge badge-na">NO PROFILE</span>`;
     else if (rolimonsVerified === true) rolBadge = `<span class="badge badge-pass">✓ VERIFIED</span>`;
-    else if (rolimonsVerified === false) rolBadge = `<span class="badge badge-fail">✗ NO</span>`;
+    else if (rolimonsVerified === false) rolBadge = `<span class="badge badge-fail">✗ NOT VER.</span>`;
     else rolBadge = `<span class="badge badge-na">N/A</span>`;
 
     tr.innerHTML = `
@@ -1123,11 +1133,11 @@ async function startScan() {
           : ''}
       </td>
       <td><span class="badge badge-na" title="Roblox doesn't expose trade settings publicly without auth">AUTH REQ</span></td>
-      <td>${hasPremium === null ? `<span class="badge badge-na cors-note">CORS ERR</span>` : badgeHTML(hasPremium, hasPremium)}</td>
+      <td>${hasPremium === null ? `<span class="badge badge-na">ERR</span>` : badgeHTML(hasPremium, hasPremium)}</td>
       <td>
         ${lastActiveStr !== null
           ? `<span class="${activeRecent ? 'badge badge-pass' : 'badge badge-fail'}">${lastActiveStr}</span>`
-          : `<span class="badge badge-na cors-note">CORS ERR</span>`}
+          : presence ? `<span class="badge badge-na">AUTH REQ</span>` : `<span class="badge badge-na">ERR</span>`}
       </td>
       <td>${rolBadge}</td>
       <td>${overallHTML}</td>
