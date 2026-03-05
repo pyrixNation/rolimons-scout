@@ -629,7 +629,7 @@
       <h1>Rolimons Scout</h1>
       <div class="subtitle">// ROBLOX PLAYER INTELLIGENCE TOOL</div>
     </div>
-    <div class="header-badge">v1.3 · PUBLIC API</div>
+    <div class="header-badge">v1.4 · PUBLIC API</div>
   </header>
 
   <div class="cors-warning" style="border-left-color: var(--green); background: rgba(0,255,136,0.05); color: #80e8b0;">
@@ -759,15 +759,19 @@
 // API helpers
 // ──────────────────────────────────────────────
 
-// Route everything through proxy.cors.sh — supports both GET and POST
-const CORS_HEADERS = {
-  'x-cors-api-key': 'temp_public'
-};
-
+// CORS proxy setup — corsproxy.io for GET, thingproxy for POST
 async function fetchJSON(url) {
-  const res = await fetch('https://proxy.cors.sh/' + url, { headers: CORS_HEADERS });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
+  // Try corsproxy.io first, fall back to allorigins
+  try {
+    const res = await fetch('https://corsproxy.io/?' + encodeURIComponent(url));
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
+  } catch(e) {
+    const res = await fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(url));
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const w = await res.json();
+    return JSON.parse(w.contents);
+  }
 }
 
 async function fetchViaProxy(url) {
@@ -775,13 +779,11 @@ async function fetchViaProxy(url) {
 }
 
 async function resolveUsernames(usernames) {
-  // Roblox username lookup — POST via cors.sh proxy
-  const res = await fetch('https://proxy.cors.sh/https://users.roblox.com/v1/usernames/users', {
+  // thingproxy supports POST and is free
+  const target = 'https://users.roblox.com/v1/usernames/users';
+  const res = await fetch('https://thingproxy.freeboard.io/fetch/' + target, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-cors-api-key': 'temp_' + Math.random().toString(36).slice(2)
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ usernames, excludeBannedUsers: false })
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -790,12 +792,10 @@ async function resolveUsernames(usernames) {
 }
 
 async function getPresence(userIds) {
-  const res = await fetch('https://proxy.cors.sh/https://presence.roblox.com/v1/presence/users', {
+  const target = 'https://presence.roblox.com/v1/presence/users';
+  const res = await fetch('https://thingproxy.freeboard.io/fetch/' + target, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-cors-api-key': 'temp_' + Math.random().toString(36).slice(2)
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ userIds })
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
