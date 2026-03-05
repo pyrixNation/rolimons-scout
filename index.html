@@ -629,7 +629,7 @@
       <h1>Rolimons Scout</h1>
       <div class="subtitle">// ROBLOX PLAYER INTELLIGENCE TOOL</div>
     </div>
-    <div class="header-badge">v2.1 · PUBLIC API</div>
+    <div class="header-badge">v2.2 · PUBLIC API</div>
   </header>
 
   <div class="cors-warning" style="border-left-color: var(--green); background: rgba(0,255,136,0.05); color: #80e8b0;">
@@ -668,7 +668,20 @@
     </div>
   </div>
 
-  <!-- Input Panel -->
+  <!-- Cookie Panel -->
+  <div class="input-panel" style="margin-bottom:1rem; border-color: rgba(255,215,0,0.2); background: rgba(255,215,0,0.03);">
+    <div class="panel-label" style="color: var(--gold);">🔑 Roblox Cookie (Optional — unlocks Last Active + Trades)</div>
+    <div style="display:flex; gap:0.6rem; align-items:center;">
+      <input type="password" id="cookieInput" placeholder=".ROBLOSECURITY cookie — paste here to enable Last Active and Trade checks"
+        style="flex:1; background:rgba(0,0,0,0.3); border:1px solid rgba(255,215,0,0.2); border-radius:8px; color:var(--text);
+               font-family:'Share Tech Mono',monospace; font-size:0.78rem; padding:0.7rem 1rem; outline:none;">
+      <button onclick="clearCookie()" class="btn-clear" style="font-size:0.75rem; padding:0.6rem 0.9rem;">Clear</button>
+    </div>
+    <div style="font-size:0.68rem; color:var(--text-dim); margin-top:0.5rem; font-family:'Share Tech Mono',monospace;">
+      ⚠ Never share your cookie with anyone. It's sent only to your own Cloudflare worker to reach Roblox.
+      Get it from Chrome DevTools → Application → Cookies → roblox.com → .ROBLOSECURITY
+    </div>
+  </div>
   <div class="input-panel">
     <div class="panel-label">Input · Usernames</div>
     <div style="display:flex; gap: 0.6rem; margin-bottom: 0.7rem;">
@@ -760,21 +773,27 @@
 // ──────────────────────────────────────────────
 
 // Your personal Cloudflare Worker proxy — handles both GET and POST
-const WORKER = 'https://rolimons-proxy.agarpyrix.workers.dev';
-
-async function fetchJSON(url) {
-  const res = await fetch(`${WORKER}?url=${encodeURIComponent(url)}`);
-  const text = await res.text();
-  if (!res.ok) throw new Error(`HTTP_${res.status}`);
-  try {
-    return JSON.parse(text);
-  } catch {
-    throw new Error(`Bad JSON: ${text.slice(0, 100)}`);
-  }
+function getCookie() {
+  return document.getElementById('cookieInput')?.value?.trim() || null;
+}
+function clearCookie() {
+  document.getElementById('cookieInput').value = '';
 }
 
-async function fetchViaProxy(url) {
-  return fetchJSON(url);
+const WORKER = 'https://rolimons-proxy.agarpyrix.workers.dev';
+
+async function fetchJSON(url, cookie) {
+  const headers = {};
+  if (cookie) headers['x-roblox-cookie'] = cookie;
+  const res = await fetch(`${WORKER}?url=${encodeURIComponent(url)}`, { headers });
+  const text = await res.text();
+  if (!res.ok) throw new Error(`HTTP_${res.status}`);
+  try { return JSON.parse(text); }
+  catch { throw new Error(`Bad JSON: ${text.slice(0, 100)}`); }
+}
+
+async function fetchViaProxy(url, cookie) {
+  return fetchJSON(url, cookie);
 }
 
 async function resolveUsernames(usernames) {
@@ -788,29 +807,37 @@ async function resolveUsernames(usernames) {
   return data.data;
 }
 
-async function getPresence(userIds) {
+async function getPresence(userIds, cookie) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (cookie) headers['x-roblox-cookie'] = cookie;
   const res = await fetch(`${WORKER}?url=${encodeURIComponent('https://presence.roblox.com/v1/presence/users')}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method: 'POST', headers,
     body: JSON.stringify({ userIds })
   });
   const text = await res.text();
   const data = JSON.parse(text);
+  console.log('Presence response:', data.userPresences);
   return data.userPresences || [];
 }
 
 async function getPremium(userId) {
-  // Use the public badges endpoint — premium users have badge id 12
   try {
     const data = await fetchJSON(`https://accountinformation.roblox.com/v1/users/${userId}/roblox-badges`);
     if (Array.isArray(data)) return data.some(b => b.id === 12);
-    // Fallback: try validate-membership
     const data2 = await fetchJSON(`https://premiumfeatures.roblox.com/v1/users/${userId}/validate-membership`);
     return data2 === true;
   } catch {
     const data2 = await fetchJSON(`https://premiumfeatures.roblox.com/v1/users/${userId}/validate-membership`);
     return data2 === true;
   }
+}
+
+async function getTradeStatus(userId, cookie) {
+  if (!cookie) return null;
+  try {
+    const data = await fetchJSON(`https://accountsettings.roblox.com/v1/users/${userId}/trade-privacy`, cookie);
+    return data?.tradePrivacy === 'All' || data?.tradePrivacy === 'Friends';
+  } catch { return null; }
 }
 
 async function getRolimonsData(userId) {
@@ -944,6 +971,7 @@ function formatValue(v) {
 async function startScan() {
   const usernames = parseUsernames(textarea.value);
   if (usernames.length === 0) return;
+  const cookie = getCookie();
 
   const btn = document.getElementById('scanBtn');
   btn.disabled = true;
@@ -997,7 +1025,7 @@ async function startScan() {
   let presenceMap = {};
   if (validIds.length > 0) {
     try {
-      const presences = await getPresence(validIds);
+      const presences = await getPresence(validIds, cookie);
       console.log('Presence response:', presences);
       presences.forEach(p => { presenceMap[p.userId] = p; });
     } catch(e) {
@@ -1023,10 +1051,11 @@ async function startScan() {
     const displayName = resolved_user.name;
 
     // Run checks in parallel
-    const [rolimonsResult, premiumResult, avatarResult] = await Promise.allSettled([
+    const [rolimonsResult, premiumResult, avatarResult, tradeResult] = await Promise.allSettled([
       getRolimonsData(userId),
       getPremium(userId),
-      getAvatar(userId)
+      getAvatar(userId),
+      getTradeStatus(userId, cookie)
     ]);
 
     // Parse Rolimons — API returns { success, player_id, rap, value, rolimons_verified, ... }
@@ -1056,7 +1085,7 @@ async function startScan() {
     // Avatar
     const avatarUrl = avatarResult.status === 'fulfilled' ? avatarResult.value : null;
 
-    // Presence — try batch result first, fall back to individual lookup
+    // Presence
     const presence = presenceMap[userId];
     let lastOnline = presence?.lastOnline || null;
     let daysAgo = null, activeRecent = null;
@@ -1064,24 +1093,20 @@ async function startScan() {
       const ms = Date.now() - new Date(lastOnline).getTime();
       daysAgo = Math.floor(ms / 86400000);
       activeRecent = daysAgo <= 7;
-    } else if (presence) {
-      // lastOnline requires auth — but if presenceType > 0 they're online right now
-      if (presence.userPresenceType > 0) {
-        daysAgo = 0;
-        activeRecent = true;
-        lastOnline = new Date().toISOString();
-      }
+    } else if (presence?.userPresenceType > 0) {
+      daysAgo = 0; activeRecent = true;
+      lastOnline = new Date().toISOString();
     }
 
-    // Trade status: not publicly accessible without auth — mark N/A
-    const tradeEnabled = null; // Cannot check without authentication
+    // Trade status
+    const tradeEnabled = tradeResult?.status === 'fulfilled' ? tradeResult.value : null;
 
     // Value check
     const valuePass = value !== null && value >= 15000;
 
-    // Overall pass (trades excluded as N/A)
-    const allCheckable = valuePass && (hasPremium === true) && (activeRecent === true);
-    const anyFailed = (value !== null && !valuePass) || (hasPremium === false) || (activeRecent === false);
+    // Overall pass
+    const allCheckable = valuePass && (hasPremium === true) && (activeRecent === true) && (tradeEnabled !== false);
+    const anyFailed = (value !== null && !valuePass) || (hasPremium === false) || (activeRecent === false) || (tradeEnabled === false);
     const overall = anyFailed ? 'fail' : (allCheckable ? 'pass' : 'partial');
 
     if (overall === 'pass') statPass++;
